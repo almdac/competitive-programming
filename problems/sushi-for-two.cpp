@@ -2,59 +2,48 @@
 
 #include <iostream>
 #include <vector>
-#include <cassert>
+#include <cmath>
 
 using namespace std;
 
 typedef unsigned int uint;
 
 uint n;
-vector<uint> groups;
+vector<char> sushi_row;
 
-bool subSegExists(uint len) { // Check wether the subsegment exists
-    for (int i = 1; i < groups.size()-1; i++) {
-        if (groups[i] >= len && (groups[i-1] >= groups[i] || groups[i+1] >= groups[i])) // If the group is big enough and has a neighbor as big as it's
-            return true; 
-    }
-    if (groups.size() == 2) {
-        if (groups[0] < groups[1]) return groups[0] >= len;
-        else return groups[1] >= len;
+bool segExists(uint len) { // Try to find a valid segment with length len
+    uint neighbor_len = 0, group_len = 1;
 
+    for (uint i = 1 ; i < n; i++) {
+        if (sushi_row[i-1] == sushi_row[i]) group_len++;
+        else if (neighbor_len && 2*min(neighbor_len, group_len) >= len) return true;
+        else {
+            neighbor_len = group_len;
+            group_len = 1;
+        }
     }
-    return false;
+    return (2*min(neighbor_len, group_len) >= len) ? true : false;
 }
 
-uint findMaxSubSeg(uint l, uint r) { // Try to find the max segment size by binary searching the solution space
+uint findMaxSegSize(uint l, uint r) { // Return the max segment size by binary searching the solution space
     uint mid;
-    
+
     while (l < r-1) {
-        mid = (r+l) >> 1;
-        if (subSegExists(mid)) l = mid; // It could be better
-        else r = mid-1; // Ok, let's try smaller subsegments
+        mid = (l+r) >> 1;
+        if (segExists(mid)) l = mid; // It could be better
+        else r = mid-1; // Ok, try smaller segments
     }
-    if (subSegExists(r)) return 2*r;
-    else return 2*l;
+    if (segExists(r)) return r;
+    else return l;
 }
 
-void getGroups() { // Get groups of sushi types
-    char t, last_t = 0;
-    uint g_len = 0;
+int main() {
+    char t;
 
     cin >> n;
     for (uint i = 0; i < n; i++) {
         cin >> t;
-        if (last_t == 0) last_t = t;
-        if (last_t == t) g_len++;
-        else {
-            groups.push_back(g_len);
-            last_t = t;
-            g_len = 1;
-        }
+        sushi_row.push_back(t);
     }
-    groups.push_back(g_len);
-}
-
-int main() {
-    getGroups();
-    cout << findMaxSubSeg(1, n/2);
+    cout << findMaxSegSize(2, n);
 }
